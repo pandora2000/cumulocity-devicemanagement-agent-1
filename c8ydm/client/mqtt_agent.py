@@ -38,6 +38,7 @@ class Agent():
 
     def __init__(self, serial, path, configuration, pidfile, simulated):
         self.logger = logging.getLogger(__name__)
+        print(serial)
         self.serial = serial
         self.simulated = simulated
         self.__client = mqtt.Client(serial)
@@ -59,6 +60,7 @@ class Agent():
         self.device_name = f'{self.configuration.getValue("agent", "name")}-{serial}'
         self.device_type = self.configuration.getValue('agent', 'type')
         self.tedge = self.configuration.getBooleanValue('agent', 'tedge')
+        self.rest_url = self.configuration.getValue('rest', 'url')
 
         self.stop_event = threading.Event()
         self.refresh_token_interval = 60
@@ -137,7 +139,9 @@ class Agent():
                 else:
                     self.__client.tls_set(self.cacert)
                     self.__client.username_pw_set(
-                        credentials[0]+'/' + credentials[1], credentials[2])
+                        credentials[0] + '/' + credentials[1],
+                        credentials[2]
+                    )
             else:
                 self.__client.username_pw_set(
                     credentials[0]+'/' + credentials[1], credentials[2])
