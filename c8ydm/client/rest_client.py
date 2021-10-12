@@ -19,6 +19,7 @@ limitations under the License.
 import requests
 import logging
 import json
+import shutil
 from base64 import b64encode
 
 proxies = {
@@ -166,3 +167,22 @@ class RestClient():
                         return False
             except Exception as e:
                     self.logger.error('The following error occured: %s' % (str(e)))
+
+    def download_software_binary(self, url, download_path):
+        try:
+            headers = self.get_auth_header()
+            # headers['Content-Type'] ='application/json'
+            # headers['Accept'] = 'application/json'
+            with requests.request("GET", url, headers=headers, proxies=proxies, stream=True) as response:
+                self.logger.debug('Response from request with code : ' + str(response.status_code))
+                if response.status_code == 200:
+                    with open(download_path, 'wb') as f:
+                        shutil.copyfileobj(response.raw, f)
+                    self.logger.info("succeeded")
+                    return None
+                else:
+                    self.logger.warning('Got response with status_code: ' +
+                                        str(response.status_code))
+                    return None
+        except Exception as e:
+                self.logger.error('The following error occured: %s' % (str(e)))

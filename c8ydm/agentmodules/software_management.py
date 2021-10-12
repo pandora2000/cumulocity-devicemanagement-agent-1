@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""  
+"""
 Copyright (c) 2021 Software AG, Darmstadt, Germany and/or its licensors
 
 SPDX-License-Identifier: Apache-2.0
@@ -59,7 +59,7 @@ class SoftwareManager(Listener, Initializer):
                 softwareToInstall = [messages[x:x + 4]
                                      for x in range(0, len(messages), 4)]
                 errors = self.apt_package_manager.install_software(
-                    softwareToInstall, True)
+                    softwareToInstall, True, self.agent.rest_client)
                 self.logger.info('Finished all software update')
                 if len(errors) == 0:
                     # finished without errors
