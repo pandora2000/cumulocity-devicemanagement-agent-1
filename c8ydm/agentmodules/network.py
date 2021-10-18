@@ -59,7 +59,15 @@ class Network(Initializer):
 
     def get_public_ip(self):
         try:
-            ip = get('https://api.ipify.org', proxies=proxies).text
+            kwargs = {}
+            http_proxy_host = self.agent.configuration.getValue('http', 'http_proxy_host')
+            http_proxy_port = self.agent.configuration.getValue('http', 'http_proxy_port')
+            proxy_type = self.agent.configuration.getValue('http', 'proxy_type')
+            if proxy_type is not None:
+                kwargs['proxies'] = {
+                    'https': f'http://{http_proxy_host}:{http_proxy_port}'
+                }
+            ip = get('https://api.ipify.org', **kwargs).text
             self.logger.debug(f'Public IP: {ip}')
             return ip
         except Exception as ex:

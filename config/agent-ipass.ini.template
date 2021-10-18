@@ -1,0 +1,23 @@
+[secret]
+subtenant = true
+c8y.tenant = ${tenant}
+c8y.username = ${username}
+c8y.password = ${password}
+
+[mqtt]
+url = mqtt.us.cumulocity.com
+port = 8883
+tls = true
+cert_auth = false
+ping.interval.seconds = 60
+
+[http]
+url = ${url}
+
+[agent]
+device.id = ${device_id}
+name = ${name}
+type = c8y_MQTTdevice
+main.loop.interval.seconds = 10
+requiredinterval = 10
+loglevel = INFO

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""  
+"""
 Copyright (c) 2021 Software AG, Darmstadt, Germany and/or its licensors
 
 SPDX-License-Identifier: Apache-2.0
@@ -32,7 +32,7 @@ class Configuration():
   password = 'c8y.password'
 
   def __init__(self, path):
-    self.configPath = path + '/agent.ini'
+    self.configPath = path + '/' + open(path + '/iniName').read().strip()
     self.configuration = configparser.ConfigParser()
     self.readFromFile()
     self.overrideFromEnv()
@@ -66,7 +66,7 @@ class Configuration():
       return self.configuration.get(category, key)
     except (NoOptionError, NoSectionError):
       return None
-  
+
   def getBooleanValue(self, category, key):
     try:
       return self.configuration.getboolean(category, key)
@@ -84,7 +84,7 @@ class Configuration():
     tenant = self.getValue(self.credentialsCategory, self.bootstrapTenant)
     user = self.getValue(self.credentialsCategory, self.bootstrapUser)
     password = self.getValue(self.credentialsCategory, self.bootstrapPassword)
-
+    print(password)
     if tenant is not None and user is not None and password is not None:
       return [tenant, user, password]
     return None
@@ -93,7 +93,7 @@ class Configuration():
     tenant = self.getValue(self.credentialsCategory, self.tenant)
     user = self.getValue(self.credentialsCategory, self.user)
     # if the password contains % it needs to be escaped as % has special meaning in configparser
-    password = self.getValue(self.credentialsCategory, self.password.replace('%','%%'))
+    password = self.getValue(self.credentialsCategory, self.password)
 
     if tenant is not None and user is not None and password is not None:
       return [tenant, user, password]
@@ -136,4 +136,3 @@ class Configuration():
     with open(self.configPath, 'w') as cfgfile:
       newConfiguration.write(cfgfile)
     self.configuration = newConfiguration
-

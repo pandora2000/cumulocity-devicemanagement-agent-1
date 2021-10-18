@@ -73,7 +73,7 @@ RUN echo "source /etc/profile.d/bash_completion.sh" >> "/root/.bashrc"
 WORKDIR /root
 
 RUN mkdir $HOME/.cumulocity
-COPY ./config/agent.ini /root/.cumulocity/agent.ini
+COPY ./config /root/.cumulocity/config
 
 # # Install requirements (using pip)
 COPY ./requirements.txt .
@@ -106,5 +106,8 @@ RUN if [ "$CLEAN_PACKAGES" = "1" ]; then \
     fi
 
 COPY ./scripts ./scripts
+
+COPY ./chain-r3reg2-agent0002.pem /root/.cumulocity/chain-cert.pem
+COPY ./r3reg2-agent0002-private-key.pem /root/.cumulocity/device-cert-private-key.pem
 
 CMD scripts/start_docker.sh

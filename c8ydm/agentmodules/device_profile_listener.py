@@ -1,4 +1,4 @@
-"""  
+"""
 Copyright (c) 2021 Software AG, Darmstadt, Germany and/or its licensors
 
 SPDX-License-Identifier: Apache-2.0
@@ -37,7 +37,7 @@ class DeviceProfileListener(Listener):
     def _set_failed(self, reason):
         failed = SmartRESTMessage('s/us', '502', [self.fragment, reason])
         self.agent.publishMessage(failed)
-    
+
     def _apply_device_profile(self, id):
         msg = None
         if id == None:
@@ -45,15 +45,15 @@ class DeviceProfileListener(Listener):
         else:
             msg = SmartRESTMessage('s/us', '121', ['true', id])
         self.agent.publishMessage(msg)
-    
+
     def _install_software_packages(self, messages):
         softwareToInstall = [messages[x:x + 4]
                                      for x in range(0, len(messages), 4)]
         self.logger.info(f'Software will be changed: {softwareToInstall}')
         errors = self.apt_package_manager.install_software(
-                    softwareToInstall, True)
+                    softwareToInstall, True, self.agent.rest_client)
         return errors
-    
+
     def _process_device_profile_msg(self, message):
         operation_values = {'$FW': [], '$SW': [], '$CONF': []}
         active_operation = ''
@@ -65,10 +65,10 @@ class DeviceProfileListener(Listener):
 
             if active_operation and not value.startswith('$'):
                 operation_values[active_operation].append(value)
-                    
-        
-        # TODO Firmware Block 
-               
+
+
+        # TODO Firmware Block
+
         # Software Block
         if len(operation_values['$SW']) > 0:
             self.logger.debug(f'Software Operations of Device Profile: {operation_values["$SW"]}')
@@ -80,10 +80,10 @@ class DeviceProfileListener(Listener):
                 self._set_failed(errors)
             self.agent.publishMessage(
                 self.apt_package_manager.getInstalledSoftware(True))
-                    
+
         #TODO Configuration Block
 
-    
+
     def handleOperation(self, message):
         """Callback that is executed for any operation received
 
@@ -96,7 +96,7 @@ class DeviceProfileListener(Listener):
                 messages = message.values
                 self._set_executing()
                 self.logger.info(f'Device Profile Message received: {messages}')
-                
+
                 self._apply_device_profile(None)
                 self._process_device_profile_msg(message)
                 self._set_success()
@@ -109,5 +109,3 @@ class DeviceProfileListener(Listener):
 
     def getSupportedTemplates(self):
         return []
-
-

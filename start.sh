@@ -25,5 +25,6 @@ then
 fi
 # proxy specific env vars
 docker run --env-file <(env | grep '^(C8YDM|HTTPS?_PROXY)') \
+           --name c8ydm \
            --rm $INTERACTIVITY_ARG \
            -v /var/run/docker.sock:/var/run/docker.sock $DOCKER_IMAGE_NAME

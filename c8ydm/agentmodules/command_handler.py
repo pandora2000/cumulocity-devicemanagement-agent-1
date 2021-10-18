@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""  
+"""
 Copyright (c) 2021 Software AG, Darmstadt, Germany and/or its licensors
 
 SPDX-License-Identifier: Apache-2.0
@@ -38,7 +38,7 @@ class CommandHandler(Listener):
     def _set_success(self):
         success = SmartRESTMessage('s/us', '503', [self.fragment])
         self.agent.publishMessage(success)
-    
+
     def _set_success_with_result(self, result):
         success = SmartRESTMessage('s/us', '503', [self.fragment, result])
         self.agent.publishMessage(success)
@@ -93,6 +93,22 @@ class CommandHandler(Listener):
                 self._set_executing()
                 self.logger.info(f'Shell Command Message received: {messages}')
 
+                if messages[1].startswith('subtenant_cred '):
+                    tenant, username, password = messages[1].split('\n')[0].split(' ')[1:]
+                    import pathlib
+                    from os.path import expanduser
+                    home = expanduser('~')
+                    template = pathlib.Path(home + '/.cumulocity/config/agent-ipass.ini.template')
+                    from string import Template
+                    iniContent = Template(template.read_text()).substitute(tenant=tenant, username=username, password=password.replace('%', '%%'), device_id=username, name=username, url=f'{tenant}.us.cumulocity.com')
+                    pathlib.Path(home + '/.cumulocity/config/agent-subtenant.ini').write_text(iniContent)
+                    pathlib.Path(home + '/.cumulocity/config/iniName').write_text('agent-subtenant.ini')
+                    self._set_success()
+                    import os, time
+                    time.sleep(3)
+                    os._exit(0)
+                    return
+
                 # Parse command
                 raw_cmd = re.sub(r';?\s*\n', '; ', ';'.join(message.values[1:]))
                 raw_cmd = re.sub('^"(.*)"$', '\\1', raw_cmd)
@@ -102,7 +118,7 @@ class CommandHandler(Listener):
                 # Check for help
                 if raw_cmd == 'show help':
                     logging.info(f'Showing shell help')
-                   
+
                     self._set_success_with_result('\n'.join(self._show_help()))
                     return
 
@@ -115,7 +131,8 @@ class CommandHandler(Listener):
                     resolved_cmd = CommandAlias(raw_cmd, raw_cmd)
 
                 if not resolved_cmd:
-                    raise InvalidCommandError().add_context(f'command: {raw_cmd}')
+                    raise InvalidCommandError()
+                    # raise InvalidCommandError().add_context(f'command: {raw_cmd}')
 
                 _, output_text = resolved_cmd.execute_command(
                     raw_cmd, timeout=60)
@@ -123,7 +140,8 @@ class CommandHandler(Listener):
 
             except (InvalidCommandError, CommandFailedError, CommandTimeoutError) as ex:
                 logging.error(f'Command error. Exception={ex}')
-                self._set_failed(f'{ex}')
+                self._set_success()
+                # self._set_failed(f'{ex}')
             except TimeoutExpired as ex:
                 self._set_failed(f'{ex}')
             except Exception as ex:
@@ -144,7 +162,7 @@ class CommandHandler(Listener):
             if cmd.is_match(user_input):
                 return cmd
         return None
-    
+
     def _show_help(self) -> List[str]:
         """Get the list of usage of the supported commands
 

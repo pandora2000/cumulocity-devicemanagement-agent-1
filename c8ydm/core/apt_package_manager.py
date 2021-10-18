@@ -22,6 +22,7 @@ import platform
 from c8ydm.framework.smartrest import SmartRESTMessage
 if 'debian' in platform.dist():
     import apt
+    import apt.debfile
 
 class AptPackageManager:
     logger = logging.getLogger(__name__)
@@ -46,7 +47,12 @@ class AptPackageManager:
 
         return SmartRESTMessage('s/us', '116', allInstalled)
 
-    def install_software(self, software_to_install, with_update):
+    def install_software_from_debfile(self, name, version, url, cache, rest_client):
+        download_path = f'/tmp/{name}_{version}.deb'
+        rest_client.download_software_binary(url, download_path)
+        apt.debfile.DebPackage(download_path, cache).install()
+
+    def install_software(self, software_to_install, with_update, rest_client):
         errors = []
         cache = apt.cache.Cache()
         if with_update:
@@ -57,11 +63,11 @@ class AptPackageManager:
         for software in software_to_install:
             name = software[0]
             version = software[1]
-            # url = software[2]
+            url = software[2]
             action = software[3]
-            pkg = cache[name]
+            pkg = cache.get(name)
             if pkg is None:
-                errors.append('No Software found with name '+ name)
+                self.install_software_from_debfile(name, version, url, cache, rest_client)
             else:
                 if action == 'install':
                     if version == 'latest':
@@ -72,7 +78,7 @@ class AptPackageManager:
                             'install ' + pkg.shortname + '=' + version)
                         candidate = pkg.versions.get(version)
                         if candidate == None:
-                            errors.append('Version '+ version +' not available in Repo!')
+                            self.install_software_from_debfile(name, version, url, cache, rest_client)
                         else:
                             pkg.candidate = candidate
                             pkg.mark_install()
@@ -85,7 +91,7 @@ class AptPackageManager:
                     self.logger.info('install ' + pkg.shortname + '=' + version)
                     candidate = pkg.versions.get(version)
                     if candidate == None:
-                            errors.append('Version '+ version +' not available in Repo!')
+                        self.install_software_from_debfile(name, version, url, cache, rest_client)
                     else:
                         pkg.candidate = candidate
                         pkg.mark_install()

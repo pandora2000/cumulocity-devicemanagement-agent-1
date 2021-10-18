@@ -86,13 +86,10 @@ class RemoteAccessListener(Listener):
         if token is None and (tenant is None or user is None or password is None):
             raise WebSocketFailureException(
                 'OAuth Token or tenantuser and password must be provided!')
-        base_url = config.getValue('remote_access', 'url')
-        http_proxy_host = config.getValue('remote_access', 'http_proxy_host')
-        http_proxy_port = config.getValue('remote_access', 'http_proxy_port')
-        proxy_type = config.getValue('remote_access', 'proxy_type')
-        print(http_proxy_host)
-        print(http_proxy_port)
-        print(proxy_type)
+        base_url = config.getValue('http', 'url')
+        http_proxy_host = config.getValue('http', 'http_proxy_host')
+        http_proxy_port = config.getValue('http', 'http_proxy_port')
+        proxy_type = config.getValue('http', 'proxy_type')
          # Not sure which buffer size is good, starting with 16 KB (16 x 1024)
         #buffer_size = self.utils.config.getint('remote-connect', 'tcp.buffer.size')
         self._device_proxy = DeviceProxy(

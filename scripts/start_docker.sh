@@ -28,4 +28,9 @@ if which vncserver; then
     USER=root vncserver &
 fi
 
-service ssh start && exec c8ydm.start
+service ssh start
+
+while :
+do
+    c8ydm.start
+done

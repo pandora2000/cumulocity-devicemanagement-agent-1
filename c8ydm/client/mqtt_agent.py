@@ -21,7 +21,7 @@ import ssl
 import _thread
 import threading
 import paho.mqtt.client as mqtt
-
+import socks
 
 import c8ydm.utils.moduleloader as moduleloader
 from c8ydm.client.rest_client import RestClient
@@ -60,7 +60,7 @@ class Agent():
         self.device_name = f'{self.configuration.getValue("agent", "name")}-{serial}'
         self.device_type = self.configuration.getValue('agent', 'type')
         self.tedge = self.configuration.getBooleanValue('agent', 'tedge')
-        self.rest_url = self.configuration.getValue('rest', 'url')
+        self.rest_url = self.configuration.getValue('http', 'url')
 
         self.stop_event = threading.Event()
         self.refresh_token_interval = 60
@@ -130,6 +130,8 @@ class Agent():
             if self.tls:
                 if self.cert_auth:
                     self.logger.debug('Using certificate authenticaiton')
+                    print(self.client_cert)
+                    print(self.client_key)
                     self.__client.tls_set(self.cacert,
                                           certfile=self.client_cert,
                                           keyfile=self.client_key,
@@ -146,6 +148,7 @@ class Agent():
                 self.__client.username_pw_set(
                     credentials[0]+'/' + credentials[1], credentials[2])
 
+            # self.__client.proxy_set(proxy_type=socks.SOCKS5, proxy_addr='172.17.0.1', proxy_port=1080)
             self.__client.connect(url, int(port), int(ping))
             self.__client.loop_start()
             return self.__client
@@ -193,6 +196,10 @@ class Agent():
         msgId = '100' if self.tedge else '101'
         vals = [self.device_name, self.device_type] if self.tedge else [self.serial, self.device_name, self.device_type]
         self.publishMessage(SmartRESTMessage('s/us', msgId, vals), 2, wait_for_publish=True)
+        # TOIMPROVE: only when no pending operation for subtenant_cred, execute this.
+        if not self.configuration.getBooleanValue('secret', 'subtenant'):
+            self.publishMessage(SmartRESTMessage('s/uc/notifySubTenantId', '901', ['', self.serial, 't277508005']), 2, wait_for_publish=True)
+
         #self.__client.publish(
         #    "s/us", "100,"+self.device_name+","+self.device_type, 2).wait_for_publish()
         #self.logger.info(f'Device published!')
@@ -265,9 +272,22 @@ class Agent():
             's/us', 110, [self.serial, self.model, '1.0'])
         self.publishMessage(modelMsg)
 
+        self.__subscribe('s/dat')
+        self.refresh_token(True)
+        self.logger.info('fdasfaaaaaa')
+        while True:
+            time.sleep(1)
+            if self.token:
+                break
+        self.logger.info('fdasfaaaaaa22')
+        # Set all dangling Operations to failed on Agent start
+        internald_id = self.rest_client.get_internal_id(self.serial)
+        ops = self.rest_client.get_all_dangling_operations(internald_id)
+        self.rest_client.set_operations_to_failed(ops)
+
+
         self.__subscribe('s/e')
         self.__subscribe('s/ds')
-        self.__subscribe('s/dat')
 
         # subscribe additional topics
         for xid in self.__supportedTemplates:
@@ -281,10 +301,6 @@ class Agent():
             token_thread.start()
             #_thread.start_new_thread(self.refresh_token)
             # refresh_token_thread.start()
-        # Set all dangling Operations to failed on Agent start
-        internald_id = self.rest_client.get_internal_id(self.serial)
-        ops = self.rest_client.get_all_dangling_operations(internald_id)
-        self.rest_client.set_operations_to_failed(ops)
 
 
     def __on_connect(self, client, userdata, flags, rc):
@@ -349,12 +365,14 @@ class Agent():
         self.logger.log(level, buf)
 
     def publishMessage(self, message, qos=0, wait_for_publish=False):
+        if message.getMessage().startswith('200,'):
+            return
         if self.tedge:
             if message.values != [] and message.values[0] == '101':
                 message.topic = f'c8y/{message.topic}'
             else:
                 message.topic = f'c8y/{message.topic}/{self.serial}'
-        self.logger.debug(f'Send: topic={message.topic} msg={message.getMessage()}')
+        self.logger.info(f'Send: topic={message.topic} msg={message.getMessage()}')
         if self.__client is not None and self.__client.is_connected:
             if wait_for_publish:
                 self.__client.publish(message.topic, message.getMessage(), qos).wait_for_publish()
@@ -362,11 +380,13 @@ class Agent():
                 self.__client.publish(message.topic, message.getMessage(), qos)
 
 
-    def refresh_token(self):
+    def refresh_token(self, one_time=False):
         self.stop_event.clear()
         while True:
             self.logger.info("Refreshing Token")
             self.__client.publish('s/uat','',2)
+            if one_time:
+                break
             if self.stop_event.wait(timeout=self.refresh_token_interval):
                 self.logger.info("Exit Refreshing Token Thread")
                 break

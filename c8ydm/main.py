@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""  
+"""
 Copyright (c) 2021 Software AG, Darmstadt, Germany and/or its licensors
 
 SPDX-License-Identifier: Apache-2.0
@@ -76,9 +76,11 @@ def start():
         home = expanduser('~')
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)
-        path = pathlib.Path(home + '/.cumulocity')
+        path = pathlib.Path(home + '/.cumulocity/config')
         path.mkdir(parents=True, exist_ok=True)
-        config_path = pathlib.Path(path / 'agent.ini')
+        iniName = pathlib.Path(path / 'iniName').read_text()
+        print(iniName)
+        config_path = pathlib.Path(path / iniName)
         if not config_path.is_file():
             sys.exit(f'No agent.ini found in "{path}". Create it to properly configure the agent.')
         config = Configuration(str(path))
@@ -150,11 +152,11 @@ def start():
             credentials = config.getCredentials()
             if credentials is None:
                 logging.error('No credentials found after bootstrapping. Stopping agent.')
-                return        
+                return
         agent.run()
     except Exception as ex:
         logger.exception(f'Error on main start {ex}', ex)
-        
+
 
 
 def stop():
@@ -183,7 +185,7 @@ def stopDaemon(pidfile):
             logging.debug(f'Try killing pid {pid}')
             os.kill(pid, signal.SIGKILL)
             time.sleep(0.1)
-                
+
     except OSError as err:
         e = str(err.args)
         if e.find("No such process") > 0:
@@ -192,7 +194,7 @@ def stopDaemon(pidfile):
         else:
             print(str(err.args))
             sys.exit(1)
-    
+
 
 
 def delpid(pidfile):

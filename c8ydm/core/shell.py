@@ -147,15 +147,12 @@ class InvalidCommandError(Exception):
 
     details: str = 'Invalid pre-defined command'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
         failure_reason: str = (
             f'Invalid command. Command execution is limited to set of pre-defined commands'
         )
         super().__init__(
-            failure_reason=failure_reason,
-            details=self.details,
-            *args,
-            **kwargs
+            self.details, failure_reason, *args
         )
 
 
@@ -169,10 +166,7 @@ class CommandFailedError(Exception):
             f'A non-zero code was returned by the command.'
         )
         super().__init__(
-            failure_reason=failure_reason,
-            details=self.details,
-            *args,
-            **kwargs
+            self.details, failure_reason, *args,
         )
 
 class CommandTimeoutError(Exception):
@@ -186,8 +180,5 @@ class CommandTimeoutError(Exception):
             f'Command are only permitted to run for a short amount of time as defined in the configuration'
         )
         super().__init__(
-            failure_reason=failure_reason,
-            details=self.details,
-            *args,
-            **kwargs
+            self.details, failure_reason, *args,
         )

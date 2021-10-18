@@ -19,6 +19,7 @@ limitations under the License.
 import requests
 import logging
 import json
+import shutil
 from base64 import b64encode
 
 proxies = {
@@ -35,11 +36,19 @@ class RestClient():
         self.base_url = agent.rest_url
         if not self.base_url.startswith('http'):
             self.base_url = f'https://{self.base_url}'
-        self.token = agent.token
+        self.agent = agent
+        self.requests_kwargs = {}
+        http_proxy_host = self.agent.configuration.getValue('http', 'http_proxy_host')
+        http_proxy_port = self.agent.configuration.getValue('http', 'http_proxy_port')
+        proxy_type = self.agent.configuration.getValue('http', 'proxy_type')
+        if proxy_type is not None:
+            self.requests_kwargs['proxies'] = {
+                'https': f'http://{http_proxy_host}:{http_proxy_port}'
+            }
 
     def get_auth_header(self):
-        if self.token:
-            return {'Authorization': 'Bearer '+self.token}
+        if self.agent.token:
+            return {'Authorization': 'Bearer '+self.agent.token}
         else:
             credentials = self.configuration.getCredentials()
             self.tenant = credentials[0]
@@ -57,7 +66,7 @@ class RestClient():
             headers = self.get_auth_header()
             headers['Content-Type'] ='application/json'
             self.logger.debug(f'Sending Request to url {url}')
-            response = requests.request("PUT", url, headers=headers, data = payload, proxies=proxies)
+            response = requests.request("PUT", url, headers=headers, data = payload, **self.requests_kwargs)
             self.logger.debug('Response from request: ' + str(response.text))
             self.logger.debug('Response from request with code : ' + str(response.status_code))
             if response.status_code == 200 or response.status_code == 201:
@@ -77,7 +86,7 @@ class RestClient():
             headers = self.get_auth_header()
             headers['Content-Type'] ='application/json'
             headers['Accept'] = 'application/json'
-            response = requests.request("GET", url, headers=headers, proxies=proxies)
+            response = requests.request("GET", url, headers=headers, **self.requests_kwargs)
             self.logger.debug('Response from request: ' + str(response.text))
             self.logger.debug('Response from request with code : ' + str(response.status_code))
             if response.status_code == 200:
@@ -104,7 +113,7 @@ class RestClient():
                 headers['Content-Type'] ='multipart/form-data'
                 headers['Accept'] ='application/json'
                 self.logger.debug(f'Sending Request to url {url}')
-                response = requests.request("POST", url, headers=headers, data=payload, files=file, proxies=proxies)
+                response = requests.request("POST", url, headers=headers, data=payload, files=file, **self.requests_kwargs)
                 print("Responsestatuscode:"+ str(response.status_code))
                 print("RESPONSEMSG: "+str(response.text))
                 self.logger.debug('Response from request: ' + str(response.text))
@@ -127,7 +136,7 @@ class RestClient():
             headers = self.get_auth_header()
             headers['Content-Type'] ='application/json'
             headers['Accept'] = 'application/json'
-            response = requests.request("GET", url, headers=headers, proxies=proxies)
+            response = requests.request("GET", url, headers=headers, **self.requests_kwargs)
             self.logger.debug('Response from request: ' + str(response.text))
             self.logger.debug('Response from request with code : ' + str(response.status_code))
             if response.status_code == 200:
@@ -157,7 +166,7 @@ class RestClient():
                         "status": "FAILED",
                         "failureReason": "Operation unexpectedly interrupted. Check logs for details"
                     }
-                    response = requests.request("PUT", url, headers=headers, data=json.dumps(payload), proxies=proxies)
+                    response = requests.request("PUT", url, headers=headers, data=json.dumps(payload), **self.requests_kwargs)
                     self.logger.debug('Response from request: ' + str(response.text))
                     self.logger.debug('Response from request with code : ' + str(response.status_code))
                     if response.status_code == 200:
@@ -166,3 +175,22 @@ class RestClient():
                         return False
             except Exception as e:
                     self.logger.error('The following error occured: %s' % (str(e)))
+
+    def download_software_binary(self, url, download_path):
+        try:
+            headers = self.get_auth_header()
+            # headers['Content-Type'] ='application/json'
+            # headers['Accept'] = 'application/json'
+            with requests.request("GET", url, headers=headers, **self.requests_kwargs, stream=True) as response:
+                self.logger.debug('Response from request with code : ' + str(response.status_code))
+                if response.status_code == 200:
+                    with open(download_path, 'wb') as f:
+                        shutil.copyfileobj(response.raw, f)
+                    self.logger.info("succeeded")
+                    return None
+                else:
+                    self.logger.warning('Got response with status_code: ' +
+                                        str(response.status_code))
+                    return None
+        except Exception as e:
+                self.logger.error('The following error occured: %s' % (str(e)))
