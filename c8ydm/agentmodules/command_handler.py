@@ -140,8 +140,7 @@ class CommandHandler(Listener):
 
             except (InvalidCommandError, CommandFailedError, CommandTimeoutError) as ex:
                 logging.error(f'Command error. Exception={ex}')
-                self._set_success()
-                # self._set_failed(f'{ex}')
+                self._set_failed(f'{ex}')
             except TimeoutExpired as ex:
                 self._set_failed(f'{ex}')
             except Exception as ex:

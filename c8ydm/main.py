@@ -79,7 +79,6 @@ def start():
         path = pathlib.Path(home + '/.cumulocity/config')
         path.mkdir(parents=True, exist_ok=True)
         iniName = pathlib.Path(path / 'iniName').read_text()
-        print(iniName)
         config_path = pathlib.Path(path / iniName)
         if not config_path.is_file():
             sys.exit(f'No agent.ini found in "{path}". Create it to properly configure the agent.')

@@ -84,7 +84,7 @@ class Configuration():
     tenant = self.getValue(self.credentialsCategory, self.bootstrapTenant)
     user = self.getValue(self.credentialsCategory, self.bootstrapUser)
     password = self.getValue(self.credentialsCategory, self.bootstrapPassword)
-    print(password)
+
     if tenant is not None and user is not None and password is not None:
       return [tenant, user, password]
     return None

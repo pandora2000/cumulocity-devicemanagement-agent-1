@@ -130,8 +130,6 @@ class Agent():
             if self.tls:
                 if self.cert_auth:
                     self.logger.debug('Using certificate authenticaiton')
-                    print(self.client_cert)
-                    print(self.client_key)
                     self.__client.tls_set(self.cacert,
                                           certfile=self.client_cert,
                                           keyfile=self.client_key,
@@ -274,12 +272,10 @@ class Agent():
 
         self.__subscribe('s/dat')
         self.refresh_token(True)
-        self.logger.info('fdasfaaaaaa')
         while True:
             time.sleep(1)
             if self.token:
                 break
-        self.logger.info('fdasfaaaaaa22')
         # Set all dangling Operations to failed on Agent start
         internald_id = self.rest_client.get_internal_id(self.serial)
         ops = self.rest_client.get_all_dangling_operations(internald_id)
@@ -372,7 +368,7 @@ class Agent():
                 message.topic = f'c8y/{message.topic}'
             else:
                 message.topic = f'c8y/{message.topic}/{self.serial}'
-        self.logger.info(f'Send: topic={message.topic} msg={message.getMessage()}')
+        self.logger.debug(f'Send: topic={message.topic} msg={message.getMessage()}')
         if self.__client is not None and self.__client.is_connected:
             if wait_for_publish:
                 self.__client.publish(message.topic, message.getMessage(), qos).wait_for_publish()
