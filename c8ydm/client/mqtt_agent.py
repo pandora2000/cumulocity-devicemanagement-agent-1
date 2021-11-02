@@ -195,7 +195,7 @@ class Agent():
         vals = [self.device_name, self.device_type] if self.tedge else [self.serial, self.device_name, self.device_type]
         self.publishMessage(SmartRESTMessage('s/us', msgId, vals), 2, wait_for_publish=True)
         # TOIMPROVE: only when no pending operation for subtenant_cred, execute this.
-        if not self.configuration.getBooleanValue('secret', 'subtenant'):
+        if self.configuration.getBooleanValue('secret', 'subtenant'):
             self.publishMessage(SmartRESTMessage('s/uc/notifySubTenantId', '901', ['', self.serial, 't277508005']), 2, wait_for_publish=True)
 
         #self.__client.publish(
