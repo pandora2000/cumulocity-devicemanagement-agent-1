@@ -77,10 +77,14 @@ class RemoteAccessListener(Listener):
         credentials = config.getCredentials()
 
         token = self.agent.token
-        tenant = credentials[0]
-        user = credentials[1]
-        tenantuser = f'{tenant}/{user}'
-        password = credentials[2]
+        tenant = config.getValue('secret', 'tenant')
+        tenantuser = f'{tenant}/anonymous'
+        user = None
+        password = None
+        if credentials is not None:
+            user = credentials[1]
+            tenantuser = f'{tenant}/{user}'
+            password = credentials[2]
         self.logger.info(f'Tenantuser {tenantuser} with password {password}')
 
         if token is None and (tenant is None or user is None or password is None):
