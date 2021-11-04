@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""  
+"""
 Copyright (c) 2021 Software AG, Darmstadt, Germany and/or its licensors
 
 SPDX-License-Identifier: Apache-2.0
@@ -30,6 +30,8 @@ class DockerSensor(Sensor, Initializer, Listener):
     fragment = 'c8y_Docker'
 
     def getSensorMessages(self):
+        if self.agent.model != 'docker':
+            return []
         #self.logger.info(f'Docker Update Loop called...')
         payload = self.docker_watcher.get_stats()
         internal_id = self.agent.rest_client.get_internal_id(self.agent.serial)
@@ -37,12 +39,14 @@ class DockerSensor(Sensor, Initializer, Listener):
         return []
 
     def getMessages(self):
+        if self.agent.model != 'docker':
+            return []
         self.logger.info(f'Docker Initializer called...')
         payload = self.docker_watcher.get_stats()
         internal_id = self.agent.rest_client.get_internal_id(self.agent.serial)
         self.agent.rest_client.update_managed_object(internal_id, payload)
         return []
-    
+
     def _set_executing(self):
         executing = SmartRESTMessage('s/us', '501', [self.fragment])
         self.agent.publishMessage(executing)
@@ -54,7 +58,7 @@ class DockerSensor(Sensor, Initializer, Listener):
     def _set_failed(self, reason):
         failed = SmartRESTMessage('s/us', '502', [self.fragment, reason])
         self.agent.publishMessage(failed)
-    
+
     def handleOperation(self, message):
         if message.messageId == 'dm501':
             self.logger.info('Found a c8y_Docker operation')
@@ -89,7 +93,7 @@ class DockerSensor(Sensor, Initializer, Listener):
             except Exception as e:
                 self.logger.error(f'The following error occured:{e}')
                 self._set_failed(stderr)
-    
+
     def getSupportedOperations(self):
         return [self.fragment]
 
