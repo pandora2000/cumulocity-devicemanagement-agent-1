@@ -19,8 +19,9 @@ limitations under the License.
 """
 import logging
 import platform
+import distro
 from c8ydm.framework.smartrest import SmartRESTMessage
-if 'debian' in platform.dist():
+if distro.linux_distribution()[0] in ['debian', 'Ubuntu']:
     import apt
     import apt.debfile
 
